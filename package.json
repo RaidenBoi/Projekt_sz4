@@ -1,0 +1,21 @@
+{
+  "name": "projekt_sz4",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^5.1.0",
+    "body-parser": "^1.20.2",
+    "dotenv": "^17.2.2",
+    "express": "^4.18.2",
+    "express-session": "^1.18.2",
+    "mysql2": "^3.2.0",
+    "nodemailer": "^7.0.6",
+    "pdfkit": "^0.17.2"
+  }
+}

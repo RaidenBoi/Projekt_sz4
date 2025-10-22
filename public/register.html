@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Regisztráció</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <style>
+    body {
+      background-color: #f0f2f5;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .register-box {
+      background: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 500px;
+    }
+    .register-box h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .step { display: none; }
+    .step.active { display: block; }
+    #telepulesSuggestions {
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    /* Kód mezők stilizálása */
+    .code-input {
+      width: 50px;
+      height: 50px;
+      font-size: 1.4rem;
+      text-align: center;
+      padding: 0;
+    }
+    .code-row { gap: 8px; }
+    .paste-hint {
+      font-size: 0.85rem;
+      color: #666;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="register-box">
+    <h2>Regisztráció</h2>
+    <form id="registrationForm" autocomplete="off">
+      <!-- 1. lépés: Email + jelszó -->
+      <div class="step active" id="step1">
+        <div class="mb-3">
+          <label for="email" class="form-label">E-mail</label>
+          <input type="email" class="form-control" id="email" name="email" required>
+        </div>
+        <div class="mb-3">
+          <label for="password" class="form-label">Jelszó</label>
+          <input type="password" class="form-control" id="password" name="password" required>
+        </div>
+        <button type="button" class="btn btn-secondary w-100" onclick="sendRegister(); nextStep(2)">Tovább</button>
+      </div>
+
+      <!-- 2. lépés: Kód -->
+      <div class="step" id="step2">
+        <div class="mb-3 text-center">
+          <label class="form-label">Megerősítő kód</label>
+          <div class="d-flex justify-content-center code-row">
+            <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]*" class="form-control text-center code-input" id="code-0" required>
+            <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]*" class="form-control text-center code-input" id="code-1" required>
+            <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]*" class="form-control text-center code-input" id="code-2" required>
+            <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]*" class="form-control text-center code-input" id="code-3" required>
+            <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]*" class="form-control text-center code-input" id="code-4" required>
+            <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]*" class="form-control text-center code-input" id="code-5" required>
+          </div>
+          <div class="paste-hint">Az email kiküldése akár 1-2 percig is eltarthat. <br> Köszönjük a türelmét!</div>
+        </div>
+        <div class="d-flex justify-content-between">
+          <button type="button" class="btn btn-secondary w-50 me-2" onclick="prevStep(1)">Vissza</button>
+          <button type="button" class="btn btn-secondary w-50" onclick="nextStep(3)">Ellenőrzés</button>
+        </div>
+      </div>
+
+      <!-- 3. lépés: Adatok -->
+      <div class="step" id="step3">
+        <div class="mb-3">
+          <label for="login" class="form-label">Felhasználónév</label>
+          <input type="text" class="form-control" id="login" name="login" required>
+        </div>
+        <div class="mb-3">
+          <label for="nev" class="form-label">Név</label>
+          <input type="text" class="form-control" id="nev" name="nev" required>
+        </div>
+        <div class="mb-3">
+          <label for="cim" class="form-label">Cím</label>
+          <input type="text" class="form-control" id="cim" name="cim" required>
+        </div>
+
+        <div class="mb-3 position-relative">
+          <label for="telepules_nev" class="form-label">Település</label>
+          <input type="text" class="form-control" id="telepules_nev" autocomplete="off" required>
+          <ul id="telepulesSuggestions" class="list-group position-absolute w-100"></ul>
+          <input type="hidden" id="telepules" name="telepules">
+          <div id="telepulesInfoRow" class="row mt-2" style="display:none;">
+            <div class="col-5">
+              <label class="form-label mb-1" style="font-size: 0.9em;">Irányítószám</label>
+              <input type="text" class="form-control form-control-sm" id="telepulesIrszam" readonly>
+            </div>
+            <div class="col-7">
+              <label class="form-label mb-1" style="font-size: 0.9em;">Megye</label>
+              <input type="text" class="form-control form-control-sm" id="telepulesMegye" readonly>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label for="telefon" class="form-label">Telefon</label>
+          <input type="text" class="form-control" id="telefon" name="telefon" required>
+        </div>
+
+        <button type="button" class="btn btn-success w-100" onclick="finishRegister()">Regisztráció befejezése</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    // --- Lépésváltás, verifikációs kód ellenőrzéssel a 2->3 lépésnél ---
+    function nextStep(step) {
+      if (step === 3) {
+        const digits = getCodeDigits();
+        if (digits.length !== 6) {
+          alert("Kérlek, add meg a 6 jegyű kódot!");
+          return;
+        }
+        fetch('/api/verify-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: digits })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.message && data.message.toLowerCase().includes('hibás')) {
+            alert("Hibás kód! Próbáld újra.");
+          } else {
+            document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
+            document.getElementById(`step${step}`).classList.add('active');
+          }
+        });
+        return;
+      }
+      document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
+      document.getElementById(`step${step}`).classList.add('active');
+    }
+
+    function prevStep(step) {
+      document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
+      document.getElementById(`step${step}`).classList.add('active');
+    }
+
+    // --- 1. Email + jelszó ---
+    function sendRegister() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      })
+      .then(res => res.json())
+      .then(data => {
+        alert(data.message);
+        if (data.message && data.message.toLowerCase().includes("kiküldve"));
+      })
+      .catch(err => {
+        alert("Hiba a regisztráció során: " + (err.message || err));
+      });
+    }
+
+    // --- 3. Regisztráció befejezése (kód + adatok) ---
+    function finishRegister() {
+      const digits = getCodeDigits();
+      const nev = document.getElementById('nev').value;
+      const telefon = document.getElementById('telefon').value;
+      const cim = document.getElementById('cim').value;
+      const login = document.getElementById('login').value;
+      const telepules = document.getElementById('telepules').value;
+
+      fetch('/api/verify-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: digits, nev, telefon, cim, login, telepules })
+      })
+      .then(res => res.json())
+      .then(data => {
+        alert(data.message);
+        if (data.userId) window.location.href = "login.html";
+      })
+      .catch(err => {
+        alert("Hiba a befejezés során: " + (err.message || err));
+      });
+    }
+
+    // --- Település autocomplete ---
+    const telepulesNevInput = document.getElementById('telepules_nev');
+    const telepulesIdInput = document.getElementById('telepules');
+    const suggestionBox = document.getElementById('telepulesSuggestions');
+    const telepulesInfoRow = document.getElementById('telepulesInfoRow');
+    const telepulesIrszam = document.getElementById('telepulesIrszam');
+    const telepulesMegye = document.getElementById('telepulesMegye');
+
+    telepulesNevInput && telepulesNevInput.addEventListener('input', () => {
+      const query = telepulesNevInput.value.trim();
+      suggestionBox.innerHTML = '';
+      telepulesInfoRow.style.display = 'none';
+      telepulesIrszam.value = '';
+      telepulesMegye.value = '';
+      if (query.length < 2) return;
+
+      fetch(`/api/telepulesek?q=${encodeURIComponent(query)}`)
+        .then(res => res.json())
+        .then(data => {
+          data.forEach(item => {
+            const li = document.createElement('li');
+            li.className = 'list-group-item';
+            li.textContent = `${item.TELEPULES} (${item.IRSZAM})`;
+            li.addEventListener('click', () => {
+              telepulesNevInput.value = item.TELEPULES;
+              telepulesIdInput.value = item.ID_TELEPULES;
+              suggestionBox.innerHTML = '';
+              telepulesIrszam.value = item.IRSZAM;
+              telepulesMegye.value = item.MEGYE;
+              telepulesInfoRow.style.display = 'flex';
+            });
+            suggestionBox.appendChild(li);
+          });
+        });
+    });
+
+    // --- Kód mezők kezelés (auto-focus, backspace) és paste támogatás ---
+    const codeInputs = Array.from(document.querySelectorAll('.code-input'));
+
+    function getCodeDigits() {
+      return codeInputs.map(i => (i.value || '').trim()).join('');
+    }
+
+    // Auto-focus és backspace kezelés
+    codeInputs.forEach((input, idx, arr) => {
+      input.addEventListener('input', (e) => {
+        // csak számjegyek engedélyezése
+        input.value = (input.value || '').replace(/\D/g, '').slice(0,1);
+        if (input.value.length === 1 && idx < arr.length - 1) {
+          arr[idx + 1].focus();
+          arr[idx + 1].select();
+        }
+      });
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && input.value === '' && idx > 0) {
+          arr[idx - 1].focus();
+          arr[idx - 1].select();
+          e.preventDefault();
+        }
+      });
+
+      // Paste kezelése: ha a felhasználó Ctrl/Cmd+V-t használ bármelyik mezőn,
+      // a teljes beillesztett számsor szétosztódik a mezők között
+      input.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const paste = (e.clipboardData || window.clipboardData).getData('text');
+        const digits = (paste || '').replace(/\D/g, '').slice(0,6).split('');
+        if (digits.length === 0) return;
+
+        // kezdő index: ha beillesztés egy középső mezőbe történik, onnan töltünk
+        let start = idx;
+        // Ha több számjegyet illesztenek be mint amennyi hely van hátra, kezdj a 0-dik mezőtől
+        if (digits.length > arr.length - start) start = Math.max(0, arr.length - digits.length);
+
+        for (let i = 0; i < digits.length && (start + i) < arr.length; i++) {
+          arr[start + i].value = digits[i];
+        }
+
+        // Ha vannak még üres mezők előtte és a paste rövidebb, nem piszkáljuk őket.
+        // Fókusz az utolsó beírt mezőre vagy a következő üresre
+        let lastFilled = Math.min(arr.length - 1, start + digits.length - 1);
+        arr[lastFilled].focus();
+        arr[lastFilled].select();
+      });
+    });
+
+    // További UX: ha a felhasználó a 2. stepre érkezik és van vágólap (opcionális),
+    // akkor a felkínálhatjuk a beillesztést automatikusan — de ezt most csak a paste esemény kezeli.
+
+  </script>
+</body>
+</html>
