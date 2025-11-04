@@ -323,6 +323,7 @@
 
       const user = await res.json();
       if (Number(user.IS_ADMIN) === 1) {
+      if (Number(user.FUNKCIO) === 1) {
         adminLink.style.display = 'inline-block';
       }
     } catch (err) {

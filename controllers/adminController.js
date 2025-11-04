@@ -7,6 +7,10 @@ const STATUS_TABLE_SQL = `
     STATUSZ ENUM('pending','accepted','rejected') NOT NULL DEFAULT 'pending',
     MEGJEGYZES TEXT,
     UPDATED_AT DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    UPDATED_AT DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_admin_order_status_kosar
+      FOREIGN KEY (ID_KOSAR) REFERENCES szerviz_kosar(ID_KOSAR)
+      ON DELETE CASCADE
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 `;
 
@@ -117,6 +121,9 @@ exports.getUsers = async (req, res) => {
        LEFT JOIN operator op_email ON op_email.EMAIL = u.EMAIL
        LEFT JOIN operator op_login ON op_login.LOGIN = u.LOGIN
        ORDER BY u.NEV ASC`
+      `SELECT ID_USER, NEV, EMAIL, TELEFON, FUNKCIO
+       FROM userek
+       ORDER BY NEV ASC`
     );
 
     res.json(rows);
@@ -143,6 +150,8 @@ exports.updateUserRole = async (req, res) => {
       return res.status(404).json({ message: 'Felhasználó nem található.' });
     }
 
+
+  try {
     const [result] = await db.query(
       'UPDATE userek SET FUNKCIO = ? WHERE ID_USER = ?',
       [funkcio, userId]
@@ -160,6 +169,12 @@ exports.updateUserRole = async (req, res) => {
     if (req.session.userId === Number(userId)) {
       req.session.role = isAdmin ? 'admin' : 'user';
       req.session.isAdmin = !!isAdmin;
+    if (req.session.userId === Number(userId)) {
+      req.session.role = funkcio === 1 ? 'admin' : 'user';
+    }
+
+    if (!result.affectedRows) {
+      return res.status(404).json({ message: 'Felhasználó nem található.' });
     }
 
     res.json({ message: 'Jogosultság frissítve.' });

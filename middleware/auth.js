@@ -38,6 +38,17 @@ module.exports.requireAdmin = async (req, res, next) => {
     const isAdmin = operatorRow && operatorRow.ADMIN === 'Y';
     req.session.role = isAdmin ? 'admin' : 'user';
     req.session.isAdmin = isAdmin;
+    const [[user]] = await db.query(
+      'SELECT FUNKCIO FROM userek WHERE ID_USER = ? LIMIT 1',
+      [req.session.userId]
+    );
+
+    if (!user) {
+      return res.status(401).json({ message: 'Felhasználó nem található.' });
+    }
+
+    const isAdmin = Number(user.FUNKCIO) === 1;
+    req.session.role = isAdmin ? 'admin' : 'user';
 
     if (!isAdmin) {
       return res.status(403).json({ message: 'Nincs jogosultság a művelethez.' });

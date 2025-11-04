@@ -121,6 +121,12 @@ exports.login = async (req, res) => {
       message: 'Sikeres bejelentkezés!',
       userId: user.ID_USER,
       isAdmin
+    req.session.role = Number(user.FUNKCIO) === 1 ? 'admin' : 'user';
+
+    res.json({
+      message: 'Sikeres bejelentkezés!',
+      userId: user.ID_USER,
+      isAdmin: req.session.role === 'admin'
     });
   } catch (err) {
     console.error(err);
@@ -171,6 +177,10 @@ exports.getProfile = async (req, res) => {
     }
 
     req.session.isAdmin = isAdmin;
+
+    if (!req.session.role) {
+      req.session.role = Number(profile.FUNKCIO) === 1 ? 'admin' : 'user';
+    }
 
     res.json(profile);
   } catch (err) {
