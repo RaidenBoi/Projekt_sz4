@@ -93,8 +93,35 @@ exports.login = async (req, res) => {
 
     req.session.userId = user.ID_USER;
     req.session.email = user.EMAIL;
+    req.session.login = user.LOGIN;
 
-    res.json({ message: 'Sikeres bejelentkezés!', userId: user.ID_USER });
+    let operatorRow;
+    if (user.EMAIL) {
+      const [[byEmail]] = await db.query(
+        'SELECT ADMIN FROM operator WHERE EMAIL = ? LIMIT 1',
+        [user.EMAIL]
+      );
+      operatorRow = byEmail;
+    }
+
+    if (!operatorRow && user.LOGIN) {
+      const [[byLogin]] = await db.query(
+        'SELECT ADMIN FROM operator WHERE LOGIN = ? LIMIT 1',
+        [user.LOGIN]
+      );
+      operatorRow = byLogin;
+    }
+
+    const isAdmin = operatorRow && operatorRow.ADMIN === 'Y';
+
+    req.session.role = isAdmin ? 'admin' : 'user';
+    req.session.isAdmin = isAdmin;
+
+    res.json({
+      message: 'Sikeres bejelentkezés!',
+      userId: user.ID_USER,
+      isAdmin
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Hiba a bejelentkezés során.' });
@@ -111,10 +138,16 @@ exports.getProfile = async (req, res) => {
     const [rows] = await db.query(
       `SELECT u.ID_USER, u.NEV, u.LOGIN, u.EMAIL, u.TELEFON, u.CIM,
               u.ID_TELEPULES, t.TELEPULES, t.IRSZAM, m.MEGYE,
-              u.CEGNEV, u.ADOSZAM, u.CIM_SZML, u.FUNKCIO, u.RATIFICAT
+              u.CEGNEV, u.ADOSZAM, u.CIM_SZML, u.FUNKCIO, u.RATIFICAT,
+              CASE
+                WHEN COALESCE(op_email.ADMIN, op_login.ADMIN) = 'Y' THEN 1
+                ELSE 0
+              END AS IS_ADMIN
        FROM userek u
        LEFT JOIN telepulesek t ON u.ID_TELEPULES = t.ID_TELEPULES
        LEFT JOIN megye m ON t.ID_MEGYEK = m.ID_MEGYEK
+       LEFT JOIN operator op_email ON op_email.EMAIL = u.EMAIL
+       LEFT JOIN operator op_login ON op_login.LOGIN = u.LOGIN
        WHERE u.ID_USER = ? LIMIT 1`,
       [req.session.userId]
     );
@@ -123,7 +156,23 @@ exports.getProfile = async (req, res) => {
       return res.status(404).json({ message: "Felhasználó nem található!" });
     }
 
-    res.json(rows[0]);
+    const profile = rows[0];
+
+    const isAdmin = Number(profile.IS_ADMIN) === 1;
+
+    if (!req.session.login && profile.LOGIN) {
+      req.session.login = profile.LOGIN;
+    }
+
+    profile.IS_ADMIN = isAdmin ? 1 : 0;
+
+    if (!req.session.role) {
+      req.session.role = isAdmin ? 'admin' : 'user';
+    }
+
+    req.session.isAdmin = isAdmin;
+
+    res.json(profile);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Hiba történt a profil lekérésekor." });
