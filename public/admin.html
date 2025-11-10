@@ -3,164 +3,1690 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Felület</title>
+  <title>Admin Felület - ITBOLT Szerviz</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
   <style>
+    :root {
+      --primary-blue: #2563eb;
+      --secondary-blue: #3b82f6;
+      --light-blue: #dbeafe;
+      --dominant-gray: #555555;
+      --medium-gray: #777777;
+      --light-gray: #f8f9fa;
+      --border-gray: #e0e0e0;
+      --text-dark: #333333;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: Arial, sans-serif;
-      background-color: #f8f9fa;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background-color: var(--light-gray);
+      color: var(--dominant-gray);
+      line-height: 1.6;
+      margin: 0;
+      padding: 0;
     }
-    header {
-      background-color: #0078d7;
+
+    .admin-header {
+      background: white;
+      color: var(--dominant-gray);
+      padding: 1rem 0;
+      box-shadow: 0 2px 10px rgba(85, 85, 85, 0.1);
+      border-bottom: 3px solid var(--primary-blue);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      width: 100%;
+    }
+
+    .admin-header h1 {
+      font-weight: 600;
+      font-size: clamp(1.25rem, 4vw, 1.5rem);
+      margin: 0;
+      color: var(--dominant-gray);
+    }
+
+    .time-display {
+      font-size: 0.9rem;
+      color: var(--medium-gray);
+    }
+
+    .logout-btn {
+      background: #ef4444;
       color: white;
-      padding: 15px;
-      display: flex;
-      justify-content: space-between;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      display: inline-flex;
       align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
     }
+
+    .logout-btn:hover {
+      background: #dc2626;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+      color: white;
+    }
+
+    .logout-success {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      padding: 1rem;
+      text-align: center;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      font-weight: 600;
+      display: none;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      width: 100%;
+    }
+
+    .stats-card {
+      background: white;
+      border-radius: 8px;
+      padding: 1.25rem;
+      box-shadow: 0 2px 8px rgba(85, 85, 85, 0.08);
+      border: 1px solid var(--border-gray);
+      transition: all 0.3s ease;
+      min-height: 140px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .stats-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 4px 15px rgba(85, 85, 85, 0.15);
+      border-color: var(--primary-blue);
+    }
+
+    .stats-card .icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 0.75rem;
+      background-color: var(--light-gray);
+      color: var(--dominant-gray);
+    }
+
+    .stats-card .count {
+      font-size: clamp(1.5rem, 4vw, 2.2rem);
+      font-weight: 700;
+      color: var(--dominant-gray);
+      margin: 0.25rem 0;
+      line-height: 1.2;
+    }
+
+    .stats-card .label {
+      color: var(--medium-gray);
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .main-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      padding: 1rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (min-width: 992px) {
+      .content-grid {
+        grid-template-columns: 2fr 1fr;
+      }
+    }
+
     .section {
       background: white;
       border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      padding: 20px;
-      margin-bottom: 20px;
+      padding: 1.25rem;
+      box-shadow: 0 2px 8px rgba(85, 85, 85, 0.08);
+      border: 1px solid var(--border-gray);
+      width: 100%;
     }
-    .btn {
-      margin-top: 10px;
+
+    .section-header {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid var(--light-gray);
     }
+
+    @media (min-width: 768px) {
+      .section-header {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+      }
+    }
+
+    .section-title {
+      font-size: clamp(1.1rem, 3vw, 1.25rem);
+      font-weight: 600;
+      color: var(--dominant-gray);
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .section-title i {
+      color: var(--primary-blue);
+    }
+
+    .btn-modern {
+      border-radius: 6px;
+      font-weight: 500;
+      padding: 0.75rem 1.25rem;
+      border: 1px solid var(--border-gray);
+      transition: all 0.3s ease;
+      color: var(--dominant-gray);
+      font-size: 0.9rem;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .btn-primary-modern {
+      background: var(--primary-blue);
+      color: white;
+      border-color: var(--primary-blue);
+    }
+
+    .btn-primary-modern:hover {
+      background: var(--secondary-blue);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+      color: white;
+    }
+
+    .btn-outline-modern {
+      border: 1px solid var(--border-gray);
+      color: var(--dominant-gray);
+      background: white;
+    }
+
+    .btn-outline-modern:hover {
+      border-color: var(--primary-blue);
+      color: var(--primary-blue);
+      background: var(--light-gray);
+      transform: translateY(-1px);
+    }
+
+    .modern-table {
+      background: white;
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(85, 85, 85, 0.1);
+      border: 1px solid var(--border-gray);
+      width: 100%;
+    }
+
+    .modern-table thead {
+      background: var(--light-gray);
+    }
+
+    .modern-table th {
+      font-weight: 600;
+      color: var(--dominant-gray);
+      border-bottom: 2px solid var(--border-gray);
+      padding: 0.75rem 0.5rem;
+      background: var(--light-gray);
+      font-size: 0.85rem;
+    }
+
+    .modern-table td {
+      padding: 0.75rem 0.5rem;
+      border-bottom: 1px solid var(--border-gray);
+      vertical-align: middle;
+      color: var(--dominant-gray);
+      font-size: 0.9rem;
+    }
+
+    .modern-table tbody tr:hover {
+      background-color: var(--light-gray);
+    }
+
+    .table-responsive {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .badge-modern {
+      padding: 0.4rem 0.8rem;
+      border-radius: 12px;
+      font-weight: 500;
+      font-size: 0.75rem;
+      border: 1px solid transparent;
+      display: inline-block;
+      text-align: center;
+      min-width: 80px;
+    }
+
+    .badge-process {
+      background: #fff3cd;
+      color: #856404;
+      border-color: #ffeaa7;
+    }
+
+    .badge-sent {
+      background: #d1ecf1;
+      color: #0c5460;
+      border-color: #bee5eb;
+    }
+
+    .badge-closed {
+      background: #f8d7da;
+      color: #721c24;
+      border-color: #f5c6cb;
+    }
+
+    .badge-no-order {
+      background: #e9ecef;
+      color: #495057;
+      border-color: #dee2e6;
+    }
+
+    .badge-admin-yes {
+      background: #d1fae5;
+      color: #065f46;
+      border-color: #a7f3d0;
+    }
+
+    .badge-admin-no {
+      background: #f3f4f6;
+      color: #374151;
+      border-color: #d1d5db;
+    }
+
+    .form-control-modern {
+      border: 1px solid var(--border-gray);
+      border-radius: 6px;
+      padding: 0.75rem;
+      font-size: 0.9rem;
+      transition: all 0.3s ease;
+      color: var(--dominant-gray);
+      background: white;
+      width: 100%;
+    }
+
+    .form-control-modern:focus {
+      border-color: var(--primary-blue);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+      color: var(--dominant-gray);
+    }
+
+    .form-control-modern::placeholder {
+      color: var(--medium-gray);
+    }
+
     .command-line {
       display: flex;
-      gap: 10px;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
     }
+
+    @media (min-width: 576px) {
+      .command-line {
+        flex-direction: row;
+      }
+    }
+
     .command-line input {
       flex: 1;
+      min-width: 0;
+    }
+
+    .vertical-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      width: 100%;
+    }
+    
+    .vertical-buttons .btn-modern {
+      width: 100%;
+      text-align: left;
+      padding: 0.85rem 1rem;
+      justify-content: flex-start;
+    }
+    
+    .vertical-buttons .btn-modern i {
+      margin-right: 0.5rem;
+      min-width: 20px;
+    }
+
+    .operator-add-btn {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      border: none;
+      font-weight: 600;
+      padding: 0.85rem 1.5rem;
+      margin-bottom: 1rem;
+    }
+    
+    .operator-add-btn:hover {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+      color: white;
+    }
+
+    .results-container {
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid var(--border-gray);
+      border-radius: 6px;
+      margin-top: 1rem;
+      background: white;
+    }
+
+    .customer-orders-count {
+      font-size: 0.8rem;
+      color: var(--medium-gray);
+      margin-top: 0.25rem;
+    }
+
+    .product-count {
+      transition: all 0.5s ease-in-out;
+    }
+
+    .product-count.updating {
+      color: var(--primary-blue);
+      transform: scale(1.1);
+    }
+
+    .refresh-indicator {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--primary-blue);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .refresh-indicator.active {
+      opacity: 1;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.2); opacity: 0.7; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    /* Operátor szerkesztő ikon stílus */
+    .edit-operator-btn {
+      background: none;
+      border: none;
+      color: var(--primary-blue);
+      cursor: pointer;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      transition: all 0.3s ease;
+      font-size: 1rem;
+    }
+
+    .edit-operator-btn:hover {
+      background: var(--light-blue);
+      transform: scale(1.1);
+    }
+
+    .edit-operator-btn:disabled {
+      color: var(--medium-gray);
+      cursor: not-allowed;
+    }
+
+    .edit-operator-btn:disabled:hover {
+      background: none;
+      transform: none;
+    }
+
+    /* Modal stílusok */
+    .operator-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .operator-modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 12px;
+      padding: 2rem;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+      position: relative;
+      animation: modalSlideIn 0.3s ease;
+    }
+
+    @keyframes modalSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-50px) scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid var(--light-gray);
+    }
+
+    .modal-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--dominant-gray);
+      margin: 0;
+    }
+
+    .close-modal {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: var(--medium-gray);
+      cursor: pointer;
+      padding: 0;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: all 0.3s ease;
+    }
+
+    .close-modal:hover {
+      background: var(--light-gray);
+      color: var(--dominant-gray);
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: var(--dominant-gray);
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 1rem;
+      margin-top: 2rem;
+      justify-content: flex-end;
+    }
+
+    .btn-danger-modern {
+      background: #ef4444;
+      color: white;
+      border: none;
+    }
+
+    .btn-danger-modern:hover {
+      background: #dc2626;
+      color: white;
+    }
+
+    .admin-warning {
+      background: #fef3c7;
+      border: 1px solid #f59e0b;
+      border-radius: 6px;
+      padding: 0.75rem;
+      margin-bottom: 1rem;
+      font-size: 0.85rem;
+      color: #92400e;
+    }
+
+    .admin-warning i {
+      color: #f59e0b;
+      margin-right: 0.5rem;
+    }
+
+    @media (max-width: 767px) {
+      .admin-header {
+        padding: 0.75rem 0;
+      }
+      
+      .main-container {
+        padding: 0.75rem;
+        gap: 1rem;
+      }
+      
+      .section {
+        padding: 1rem;
+        margin-bottom: 0;
+      }
+      
+      .stats-card {
+        padding: 1rem;
+        min-height: 120px;
+      }
+      
+      .stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 0.75rem;
+      }
+      
+      .modern-table th,
+      .modern-table td {
+        padding: 0.5rem 0.25rem;
+        font-size: 0.8rem;
+      }
+      
+      .btn-modern {
+        padding: 0.6rem 1rem;
+        font-size: 0.85rem;
+      }
+      
+      .vertical-buttons {
+        gap: 0.5rem;
+      }
+      
+      .operator-add-btn {
+        padding: 0.75rem 1.25rem;
+        font-size: 0.9rem;
+      }
+      
+      .logout-btn {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.8rem;
+      }
+
+      .modal-content {
+        padding: 1.5rem;
+        margin: 1rem;
+      }
+    }
+
+    @media (max-width: 575px) {
+      .stats-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      
+      .section-header {
+        text-align: center;
+      }
+      
+      .section-title {
+        justify-content: center;
+      }
+    }
+
+    @media (max-width: 400px) {
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .modern-table {
+        font-size: 0.75rem;
+      }
+      
+      .badge-modern {
+        min-width: 60px;
+        padding: 0.3rem 0.6rem;
+        font-size: 0.7rem;
+      }
+    }
+
+    .table-responsive::-webkit-scrollbar {
+      height: 6px;
+    }
+
+    .table-responsive::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 3px;
+    }
+
+    .table-responsive::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 3px;
+    }
+
+    .table-responsive::-webkit-scrollbar-thumb:hover {
+      background: #a8a8a8;
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Admin Felület</h1>
-    <div>
-      <span id="current-time"></span> | Bejelentkezett: <span id="admin-name">Admin</span>
+  <!-- Sikeres kijelentkezés üzenet -->
+  <div class="logout-success" id="logout-success">
+    <i class="bi bi-check-circle-fill"></i>
+    Sikeresen kijelentkeztél!
+  </div>
+
+  <!-- Operátor szerkesztő modal -->
+  <div class="operator-modal" id="operator-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-title">Operátor Szerkesztése</h3>
+        <button class="close-modal" onclick="closeOperatorModal()">
+          <i class="bi bi-x"></i>
+        </button>
+      </div>
+      
+      <!-- Admin figyelmeztetés -->
+      <div class="admin-warning" id="admin-warning" style="display: none;">
+        <i class="bi bi-exclamation-triangle"></i>
+        <strong>Admin figyelmeztetés:</strong> Csak admin jogosultsággal rendelkező felhasználók módosíthatják az admin státuszt.
+      </div>
+      
+      <form id="operator-form">
+        <input type="hidden" id="edit-operator-id">
+        
+        <div class="form-group">
+          <label class="form-label" for="edit-login">Bejelentkezési név:</label>
+          <input type="text" id="edit-login" class="form-control-modern" required>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label" for="edit-name">Teljes név:</label>
+          <input type="text" id="edit-name" class="form-control-modern" required>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label" for="edit-email">Email cím:</label>
+          <input type="email" id="edit-email" class="form-control-modern" required>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label" for="edit-password">Jelszó (üresen hagyva nem változik):</label>
+          <input type="password" id="edit-password" class="form-control-modern" placeholder="Új jelszó...">
+        </div>
+        
+        <div class="form-group">
+          <div class="checkbox-group">
+            <input type="checkbox" id="edit-admin">
+            <label class="form-label" for="edit-admin">Admin jogosultság</label>
+          </div>
+          <small class="text-muted">Csak admin felhasználók módosíthatják ezt a beállítást</small>
+        </div>
+        
+        <div class="modal-actions">
+          <button type="button" class="btn btn-danger-modern btn-modern" id="delete-operator-btn" onclick="deleteOperator()">
+            <i class="bi bi-trash"></i>
+            Törlés
+          </button>
+          <button type="button" class="btn btn-outline-modern btn-modern" onclick="closeOperatorModal()">
+            Mégse
+          </button>
+          <button type="submit" class="btn btn-primary-modern btn-modern">
+            <i class="bi bi-check"></i>
+            Mentés
+          </button>
+        </div>
+      </form>
     </div>
-  </header>
-  <div class="container my-4">
-    <!-- Bejövő Rendelések -->
-    <div class="section">
-      <h2>Bejövő Rendelések</h2>
-      <div class="list-group" id="orders">
-        <div class="list-group-item d-flex justify-content-between align-items-center">
-          <span>Rendelés #1</span>
-          <div>
-            <button class="btn btn-success btn-sm" onclick="acceptOrder()">Elfogadás</button>
-            <button class="btn btn-danger btn-sm" onclick="rejectOrder()">Visszautasítás</button>
+  </div>
+
+  <header class="admin-header">
+    <div class="container-fluid">
+      <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
+        <h1 class="text-center text-sm-start">
+          <i class="bi bi-cpu-fill text-primary"></i>
+          ITBOLT Admin Felület
+        </h1>
+        <div class="text-center text-sm-end">
+          <div class="time-display">
+            <i class="bi bi-clock"></i>
+            <span id="current-time"></span>
+          </div>
+          <div class="d-flex flex-column flex-sm-row align-items-center gap-2 mt-1">
+            <small class="text-dominant">Adminisztrátor</small>
+            <button class="logout-btn" onclick="logout()">
+              <i class="bi bi-box-arrow-right"></i>
+              Kijelentkezés
+            </button>
           </div>
         </div>
       </div>
     </div>
+  </header>
 
-    <!-- Üzenet Küldése -->
-    <div class="section">
-      <h2>Üzenet Küldése</h2>
-      <select id="user-select" class="form-select mb-3">
-        <option value="user1">Felhasználó 1</option>
-        <option value="user2">Felhasználó 2</option>
-      </select>
-      <textarea id="message" rows="4" class="form-control mb-3" placeholder="Írja be az üzenetet..."></textarea>
-      <button class="btn btn-primary w-100" onclick="sendMessage()">Üzenet Küldése</button>
-    </div>
-
-    <!-- Parancssor -->
-    <div class="section">
-      <h2>Parancssor</h2>
-      <div class="command-line">
-        <input type="text" id="command" class="form-control" placeholder="Írjon be egy parancsot...">
-        <button class="btn btn-secondary" onclick="executeCommand()">Futtatás</button>
+  <div class="main-container">
+    <div class="stats-grid">
+      <div class="stats-card">
+        <div class="icon">
+          <i class="bi bi-people-fill"></i>
+        </div>
+        <div class="count" id="userek-count">-</div>
+        <div class="label">Ügyfelek</div>
+      </div>
+      <div class="stats-card">
+        <div class="icon">
+          <i class="bi bi-tools"></i>
+        </div>
+        <div class="count" id="open-service-count">-</div>
+        <div class="label">Aktív szervizek</div>
+      </div>
+      <div class="stats-card">
+        <div class="icon">
+          <i class="bi bi-person-badge"></i>
+        </div>
+        <div class="count" id="operator-count">-</div>
+        <div class="label">Operátorok</div>
+      </div>
+      <div class="stats-card" style="position: relative;">
+        <div class="refresh-indicator" id="refresh-indicator"></div>
+        <div class="icon">
+          <i class="bi bi-box-seam"></i>
+        </div>
+        <div class="count product-count" id="product-count">-</div>
+        <div class="label">Aktív termékek</div>
+        <small class="text-muted mt-1" style="font-size: 0.7rem;">15 másodpercenként frissül</small>
       </div>
     </div>
 
-    <!-- Adatok Exportálása -->
-    <div class="section">
-      <h2>Adatok Exportálása</h2>
-      <button class="btn btn-warning w-100" onclick="exportData()">Exportálás</button>
-    </div>
+    <div class="content-grid">
+      <div class="left-content">
+        <button class="btn operator-add-btn btn-modern w-100" onclick="addOperator()">
+          <i class="bi bi-person-plus-fill"></i>
+          Operátor felvétele
+        </button>
 
-    <!-- Felhasználók Kezelése -->
-    <div class="section">
-      <h2>Felhasználók Kezelése</h2>
-      <h3>Felhasználó Létrehozása</h3>
-      <input type="text" id="new-user-name" class="form-control mb-2" placeholder="Felhasználó neve">
-      <input type="text" id="new-user-code" class="form-control mb-2" placeholder="Felhasználó kódja">
-      <button class="btn btn-success w-100" onclick="createUser()">Létrehozás</button>
-      <h3 class="mt-4">Felhasználó Törlése</h3>
-      <select id="delete-user-select" class="form-select mb-3">
-        <option value="user1">Felhasználó 1</option>
-        <option value="user2">Felhasználó 2</option>
-      </select>
-      <button class="btn btn-danger w-100" onclick="deleteUser()">Törlés</button>
+        <div class="section">
+          <div class="section-header">
+            <h2 class="section-title">
+              <i class="bi bi-people"></i>
+              Összes Ügyfél és Rendeléseik
+            </h2>
+            <button class="btn btn-outline-modern btn-modern" onclick="refreshAllData()">
+              <i class="bi bi-arrow-clockwise"></i>
+              Frissítés
+            </button>
+          </div>
+          <div class="table-responsive">
+            <table class="table modern-table">
+              <thead>
+                <tr>
+                  <th>Ügyfél ID</th>
+                  <th>Név</th>
+                  <th>Email</th>
+                  <th>Telefon</th>
+                  <th>Aktív rendelések</th>
+                  <th>Összes rendelés</th>
+                </tr>
+              </thead>
+              <tbody id="all-customers">
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-header">
+            <h2 class="section-title">
+              <i class="bi bi-list-task"></i>
+              Aktív Szerviz Rendelések
+            </h2>
+          </div>
+          <div class="table-responsive">
+            <table class="table modern-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Ügyfél</th>
+                  <th>Termék</th>
+                  <th>Állapot</th>
+                  <th>Felvétel dátuma</th>
+                  <th>Operátor</th>
+                </tr>
+              </thead>
+              <tbody id="active-orders">
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-header">
+            <h2 class="section-title">
+              <i class="bi bi-terminal"></i>
+              Adatbázis Parancssor
+            </h2>
+          </div>
+          <div class="command-line">
+            <input type="text" id="command" class="form-control form-control-modern" placeholder="Írjon be egy SQL parancsot..." value="SELECT ID_OPERATOR, LOGIN, NEV, ADMIN FROM operator ORDER BY NEV">
+            <button class="btn btn-primary-modern btn-modern" onclick="executeCommand()">
+              <i class="bi bi-play-fill"></i>
+              Futtatás
+            </button>
+          </div>
+          <small class="text-muted">Példa: SELECT * FROM userek LIMIT 5</small>
+          
+          <div id="sql-results" class="mt-3" style="display: none;">
+            <h6 class="mb-2 text-dominant">Lekérdezés eredménye:</h6>
+            <div class="results-container">
+              <table class="table table-sm" id="results-table">
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="right-content">
+        <div class="section">
+          <div class="section-header">
+            <h2 class="section-title">
+              <i class="bi bi-envelope"></i>
+              Email Küldés
+            </h2>
+          </div>
+          <select id="user-select" class="form-select form-control-modern mb-3">
+            <option value="">Válassz ügyfelet...</option>
+          </select>
+          <input type="text" id="email-subject" class="form-control form-control-modern mb-3" placeholder="Email tárgya..." value="Üzenet a szerviz rendszerből">
+          <textarea id="message" rows="4" class="form-control form-control-modern mb-3" placeholder="Írja be az üzenet szövegét..."></textarea>
+          <button class="btn btn-primary-modern btn-modern w-100" onclick="sendMessage()">
+            <i class="bi bi-send"></i>
+            Email Küldése
+          </button>
+        </div>
+
+        <div class="section">
+          <div class="section-header">
+            <h2 class="section-title">
+              <i class="bi bi-lightning"></i>
+              Gyors Lekérdezések
+            </h2>
+          </div>
+          <div class="vertical-buttons">
+            <button class="btn btn-outline-modern btn-modern" 
+              onclick="runQuickQuery('SELECT ID_USER, NEV, EMAIL, TELEFON FROM userek ORDER BY ID_USER DESC LIMIT 5')">
+              <i class="bi bi-people"></i>
+              Legújabb ügyfelek
+            </button>
+            <button class="btn btn-outline-modern btn-modern" 
+              onclick="runQuickQuery('SELECT skt.ID_KOSARTETEL, u.NEV as ugyfel_nev, skt.NEV as termek_nev, skt.KONDI, skt.FELV_DATUM, o.NEV as operator_nev FROM szerviz_kosar_tetelei skt JOIN szerviz_kosar sk ON skt.ID_KOSAR = sk.ID_KOSAR JOIN userek u ON sk.ID_USER = u.ID_USER LEFT JOIN operator o ON skt.ID_OPERATOR = o.ID_OPERATOR WHERE skt.KONDI = \'process\' ORDER BY skt.FELV_DATUM DESC')">
+              <i class="bi bi-tools"></i>
+              Aktív szervizek
+            </button>
+            <button class="btn btn-outline-modern btn-modern" 
+              onclick="runQuickQuery('SELECT ID_OPERATOR, LOGIN, NEV, ADMIN FROM operator ORDER BY NEV')">
+              <i class="bi bi-person-badge"></i>
+              Operátorok
+            </button>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-header">
+            <h2 class="section-title">
+              <i class="bi bi-database"></i>
+              Adat Műveletek
+            </h2>
+          </div>
+          <div class="vertical-buttons">
+            <button class="btn btn-outline-modern btn-modern" onclick="exportTable('userek')">
+              <i class="bi bi-download"></i>
+              Ügyfelek export
+            </button>
+            <button class="btn btn-outline-modern btn-modern" onclick="exportTable('szerviz_kosar_tetelei')">
+              <i class="bi bi-download"></i>
+              Szervizek export
+            </button>
+            <button class="btn btn-outline-modern btn-modern" onclick="exportTable('IT_termekek')">
+              <i class="bi bi-download"></i>
+              Termékek export
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
   <script>
+    // Globális változók
+    let productRefreshInterval;
+    let currentUserIsAdmin = true; // Alapértelmezetten adminnak tekintjük
+
     // Idő frissítése
     function updateTime() {
       const now = new Date();
-      document.getElementById('current-time').textContent = now.toLocaleString();
+      document.getElementById('current-time').textContent = now.toLocaleString('hu-HU');
     }
     setInterval(updateTime, 1000);
     updateTime();
 
-    // Rendelések kezelése
-    function acceptOrder() {
-      alert('Rendelés elfogadva!');
+    // Kijelentkezés funkció
+    function logout() {
+      if (confirm('Biztosan ki szeretnél jelentkezni?')) {
+        const logoutSuccess = document.getElementById('logout-success');
+        logoutSuccess.style.display = 'block';
+        
+        if (window.history.replaceState) {
+          window.history.replaceState(null, null, 'login.html');
+        }
+        
+        setTimeout(() => {
+          window.location.replace('index.html');
+        }, 2000);
+      }
     }
 
-    function rejectOrder() {
-      alert('Rendelés visszautasítva!');
+    // Oldal betöltésekor automatikus adatfeltöltés
+    document.addEventListener('DOMContentLoaded', function() {
+      refreshAllData();
+      startProductRefreshTimer();
+      
+      // Operátor form submit esemény
+      document.getElementById('operator-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveOperator();
+      });
+    });
+
+    // Operátor felvétel funkció
+    function addOperator() {
+      // Ellenőrizzük, hogy admin-e a felhasználó
+      if (!currentUserIsAdmin) {
+        alert('❌ Csak admin felhasználók vehetnek fel új operátorokat!');
+        return;
+      }
+
+      const login = prompt('Add meg az operátor bejelentkezési nevét:');
+      if (!login) return;
+      
+      const name = prompt('Add meg az operátor teljes nevét:');
+      if (!name) return;
+      
+      const email = prompt('Add meg az operátor email címét:');
+      if (!email) return;
+      
+      const password = prompt('Add meg az operátor jelszavát:');
+      if (!password) return;
+
+      const makeAdmin = confirm('Admin jogosultságot adsz az operátornak?');
+      const adminStatus = makeAdmin ? 'Y' : 'N';
+      
+      if (confirm(`Biztosan fel szeretnéd venni az operátort?\n\nBejelentkezési név: ${login}\nNév: ${name}\nEmail: ${email}\nAdmin: ${makeAdmin ? 'Igen' : 'Nem'}`)) {
+        const sql = `INSERT INTO operator (LOGIN, NEV, PASSWORD, EMAIL, ADMIN) VALUES ('${login}', '${name}', '${password}', '${email}', '${adminStatus}')`;
+        
+        executeSqlQuery(sql)
+          .then(result => {
+            alert('✅ Operátor sikeresen felvéve!');
+            refreshAllData();
+          })
+          .catch(error => {
+            alert('❌ Hiba az operátor felvétele során: ' + error);
+          });
+      }
     }
 
-    // Üzenet küldése
-    function sendMessage() {
-      const user = document.getElementById('user-select').value;
+    // Operátor szerkesztő modal megnyitása - JAVÍTOTT: email kezelés
+    function editOperator(operatorId, login, name, email, admin) {
+      console.log('Operátor adatok:', { operatorId, login, name, email, admin });
+      
+      document.getElementById('edit-operator-id').value = operatorId;
+      document.getElementById('edit-login').value = login || '';
+      document.getElementById('edit-name').value = name || '';
+      
+      // EMAIL JAVÍTÁS: Ellenőrizzük, hogy van-e email érték
+      const emailValue = (email && email !== 'undefined' && email !== 'null') ? email : '';
+      document.getElementById('edit-email').value = emailValue;
+      
+      document.getElementById('edit-password').value = '';
+      
+      // Admin checkbox kezelése
+      const adminCheckbox = document.getElementById('edit-admin');
+      adminCheckbox.checked = admin === 'Y';
+      
+      // Ha a felhasználó nem admin, letiltjuk az admin checkbox-ot
+      if (!currentUserIsAdmin) {
+        adminCheckbox.disabled = true;
+        document.getElementById('admin-warning').style.display = 'block';
+      } else {
+        adminCheckbox.disabled = false;
+        document.getElementById('admin-warning').style.display = 'none';
+      }
+      
+      document.getElementById('modal-title').textContent = 'Operátor Szerkesztése';
+      document.getElementById('delete-operator-btn').style.display = 'block';
+      
+      document.getElementById('operator-modal').classList.add('active');
+    }
+
+    // Operátor modal bezárása
+    function closeOperatorModal() {
+      document.getElementById('operator-modal').classList.remove('active');
+      document.getElementById('operator-form').reset();
+      document.getElementById('edit-admin').disabled = false;
+      document.getElementById('admin-warning').style.display = 'none';
+    }
+
+    // Operátor adatok mentése
+    function saveOperator() {
+      const operatorId = document.getElementById('edit-operator-id').value;
+      const login = document.getElementById('edit-login').value;
+      const name = document.getElementById('edit-name').value;
+      const email = document.getElementById('edit-email').value;
+      const password = document.getElementById('edit-password').value;
+      const admin = document.getElementById('edit-admin').checked ? 'Y' : 'N';
+
+      if (!login || !name || !email) {
+        alert('Kérjük, töltse ki az összes kötelező mezőt!');
+        return;
+      }
+
+      // Email validáció
+      if (!isValidEmail(email)) {
+        alert('Kérjük, adjon meg egy érvényes email címet!');
+        return;
+      }
+
+      let sql;
+      if (password) {
+        sql = `UPDATE operator SET LOGIN='${login}', NEV='${name}', EMAIL='${email}', PASSWORD='${password}', ADMIN='${admin}' WHERE ID_OPERATOR=${operatorId}`;
+      } else {
+        sql = `UPDATE operator SET LOGIN='${login}', NEV='${name}', EMAIL='${email}', ADMIN='${admin}' WHERE ID_OPERATOR=${operatorId}`;
+      }
+
+      executeSqlQuery(sql)
+        .then(result => {
+          alert('✅ Operátor adatai sikeresen frissítve!');
+          closeOperatorModal();
+          refreshAllData();
+          // SQL parancs újrafuttatása a frissített adatok megjelenítéséhez
+          executeCommand();
+        })
+        .catch(error => {
+          alert('❌ Hiba az operátor frissítése során: ' + error);
+        });
+    }
+
+    // Email validáció
+    function isValidEmail(email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return emailRegex.test(email);
+    }
+
+    // Operátor törlése
+    function deleteOperator() {
+      // Ellenőrizzük, hogy admin-e a felhasználó
+      if (!currentUserIsAdmin) {
+        alert('❌ Csak admin felhasználók törölhetnek operátorokat!');
+        return;
+      }
+
+      const operatorId = document.getElementById('edit-operator-id').value;
+      const name = document.getElementById('edit-name').value;
+
+      if (!confirm(`Biztosan törölni szeretnéd a(z) "${name}" operátort?\n\nFIGYELEM: Ez a művelet nem visszavonható!`)) {
+        return;
+      }
+
+      const sql = `DELETE FROM operator WHERE ID_OPERATOR=${operatorId}`;
+
+      executeSqlQuery(sql)
+        .then(result => {
+          alert('✅ Operátor sikeresen törölve!');
+          closeOperatorModal();
+          refreshAllData();
+          // SQL parancs újrafuttatása a frissített adatok megjelenítéséhez
+          executeCommand();
+        })
+        .catch(error => {
+          alert('❌ Hiba az operátor törlése során: ' + error);
+        });
+    }
+
+    // Termékkészlet frissítő időzítő indítása
+    function startProductRefreshTimer() {
+      if (productRefreshInterval) {
+        clearInterval(productRefreshInterval);
+      }
+      
+      productRefreshInterval = setInterval(refreshProductCount, 15000);
+      console.log('🔄 Termékkészlet frissítés indítva: 15 másodpercenként');
+    }
+
+    // Termékkészlet frissítése animációval
+    async function refreshProductCount() {
+      const productCountElement = document.getElementById('product-count');
+      const refreshIndicator = document.getElementById('refresh-indicator');
+      
+      try {
+        console.log('🔄 Termékkészlet frissítése...');
+        
+        productCountElement.classList.add('updating');
+        refreshIndicator.classList.add('active');
+        
+        const sql = 'SELECT COUNT(*) as count FROM IT_termekek WHERE AKTIV = "Y"';
+        const result = await executeSqlQuery(sql);
+        const newCount = result.rows[0].count;
+        
+        console.log(`✅ Új termékkészlet érték: ${newCount}`);
+        
+        animateCountChange(productCountElement, newCount);
+        
+        setTimeout(() => {
+          productCountElement.classList.remove('updating');
+          refreshIndicator.classList.remove('active');
+        }, 1000);
+        
+      } catch (error) {
+        console.error('❌ Termékkészlet frissítési hiba:', error);
+        productCountElement.classList.remove('updating');
+        refreshIndicator.classList.remove('active');
+      }
+    }
+
+    // Szám animált változtatása
+    function animateCountChange(element, newValue) {
+      const currentText = element.textContent;
+      const currentValue = currentText === '-' ? 0 : parseInt(currentText);
+      const duration = 800;
+      const steps = 30;
+      const stepTime = duration / steps;
+      const increment = (newValue - currentValue) / steps;
+      
+      let currentStep = 0;
+      let currentDisplayValue = currentValue;
+      
+      const timer = setInterval(() => {
+        currentStep++;
+        currentDisplayValue += increment;
+        
+        if (currentStep >= steps) {
+          element.textContent = newValue;
+          clearInterval(timer);
+        } else {
+          element.textContent = Math.round(currentDisplayValue);
+        }
+      }, stepTime);
+    }
+
+    // Összes adat frissítése
+    async function refreshAllData() {
+      try {
+        await loadStatistics();
+        await loadAllCustomers();
+        await loadActiveOrders();
+        await loadUserek();
+        console.log('✅ Minden adat frissítve');
+      } catch (error) {
+        console.error('❌ Hiba a frissítés során:', error);
+      }
+    }
+
+    // Statisztikák betöltése
+    async function loadStatistics() {
+      try {
+        const queries = [
+          'SELECT COUNT(*) as count FROM userek',
+          'SELECT COUNT(*) as count FROM szerviz_kosar_tetelei WHERE KONDI IN ("process", "sent")',
+          'SELECT COUNT(*) as count FROM operator',
+          'SELECT COUNT(*) as count FROM IT_termekek WHERE AKTIV = "Y"'
+        ];
+
+        const results = await Promise.all(queries.map(query => executeSqlQuery(query)));
+        
+        document.getElementById('userek-count').textContent = results[0].rows[0].count;
+        document.getElementById('open-service-count').textContent = results[1].rows[0].count;
+        document.getElementById('operator-count').textContent = results[2].rows[0].count;
+        
+        const productCountElement = document.getElementById('product-count');
+        const newProductCount = results[3].rows[0].count;
+        
+        if (productCountElement.textContent === '-') {
+          productCountElement.textContent = newProductCount;
+        } else {
+          animateCountChange(productCountElement, newProductCount);
+        }
+        
+      } catch (error) {
+        console.error('Statisztika hiba:', error);
+      }
+    }
+
+    // MINDEN ügyfél betöltése
+    async function loadAllCustomers() {
+      const sql = `SELECT 
+                    u.ID_USER,
+                    u.NEV,
+                    u.EMAIL,
+                    u.TELEFON,
+                    COUNT(DISTINCT sk.ID_KOSAR) as osszes_rendeles,
+                    COUNT(DISTINCT CASE WHEN skt.KONDI IN ('process', 'sent') THEN skt.ID_KOSARTETEL END) as aktiv_rendelesek
+                   FROM userek u
+                   LEFT JOIN szerviz_kosar sk ON u.ID_USER = sk.ID_USER
+                   LEFT JOIN szerviz_kosar_tetelei skt ON sk.ID_KOSAR = skt.ID_KOSAR
+                   GROUP BY u.ID_USER, u.NEV, u.EMAIL, u.TELEFON
+                   ORDER BY u.NEV`;
+
+      try {
+        const result = await executeSqlQuery(sql);
+        const tbody = document.getElementById('all-customers');
+        tbody.innerHTML = '';
+
+        if (result.rows.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">Nincsenek ügyfelek</td></tr>';
+          return;
+        }
+
+        result.rows.forEach(customer => {
+          const row = `<tr>
+                        <td><strong>#${customer.ID_USER}</strong></td>
+                        <td>${customer.NEV}</td>
+                        <td>${customer.EMAIL}</td>
+                        <td>${customer.TELEFON || 'Nincs megadva'}</td>
+                        <td>
+                          <span class="badge-modern ${customer.aktiv_rendelesek > 0 ? 'badge-process' : 'badge-no-order'}">
+                            ${customer.aktiv_rendelesek} aktív
+                          </span>
+                        </td>
+                        <td>
+                          <span class="badge-modern badge-no-order">
+                            ${customer.osszes_rendeles} összesen
+                          </span>
+                        </td>
+                      </tr>`;
+          tbody.innerHTML += row;
+        });
+      } catch (error) {
+        console.error('Ügyfelek betöltési hiba:', error);
+        document.getElementById('all-customers').innerHTML = 
+          '<tr><td colspan="6" class="text-center py-4 text-danger">Hiba az ügyfelek betöltése során</td></tr>';
+      }
+    }
+
+    // Aktív szerviz rendelések betöltése
+    async function loadActiveOrders() {
+      const sql = `SELECT 
+                    skt.ID_KOSARTETEL, 
+                    u.NEV as ugyfel_nev, 
+                    skt.NEV as termek_nev, 
+                    skt.KONDI, 
+                    skt.FELV_DATUM, 
+                    o.NEV as operator_nev,
+                    skt.AZONOSITO,
+                    skt.LEIRAS
+                   FROM szerviz_kosar_tetelei skt 
+                   JOIN szerviz_kosar sk ON skt.ID_KOSAR = sk.ID_KOSAR 
+                   JOIN userek u ON sk.ID_USER = u.ID_USER
+                   LEFT JOIN operator o ON skt.ID_OPERATOR = o.ID_OPERATOR 
+                   WHERE skt.KONDI IN ('process', 'sent') 
+                   ORDER BY skt.FELV_DATUM DESC 
+                   LIMIT 25`;
+
+      try {
+        const result = await executeSqlQuery(sql);
+        const tbody = document.getElementById('active-orders');
+        tbody.innerHTML = '';
+
+        if (result.rows.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">Nincsenek aktív szerviz rendelések</td></tr>';
+          return;
+        }
+
+        result.rows.forEach(order => {
+          const statusClass = {
+            'process': 'badge-process',
+            'sent': 'badge-sent', 
+            'closed': 'badge-closed'
+          }[order.KONDI] || 'badge-process';
+
+          const statusText = {
+            'process': 'Folyamatban',
+            'sent': 'Elküldve',
+            'closed': 'Lezárva'
+          }[order.KONDI] || order.KONDI;
+
+          const row = `<tr>
+                        <td><strong>#${order.ID_KOSARTETEL}</strong></td>
+                        <td>${order.ugyfel_nev}</td>
+                        <td>
+                          <div class="fw-semibold">${order.termek_nev}</div>
+                          <small class="text-muted">${order.AZONOSITO || 'Nincs azonosító'}</small>
+                        </td>
+                        <td><span class="badge-modern ${statusClass}">${statusText}</span></td>
+                        <td>${new Date(order.FELV_DATUM).toLocaleDateString('hu-HU')}</td>
+                        <td>${order.operator_nev || 'Nincs hozzárendelve'}</td>
+                      </tr>`;
+          tbody.innerHTML += row;
+        });
+      } catch (error) {
+        console.error('Rendelések betöltési hiba:', error);
+        document.getElementById('active-orders').innerHTML = 
+          '<tr><td colspan="6" class="text-center py-4 text-danger">Hiba a rendelések betöltése során</td></tr>';
+      }
+    }
+
+    // Ügyfelek betöltése a dropdownba
+    async function loadUserek() {
+      const sql = 'SELECT ID_USER, NEV, EMAIL FROM userek ORDER BY NEV';
+      
+      try {
+        const result = await executeSqlQuery(sql);
+        const select = document.getElementById('user-select');
+        select.innerHTML = '<option value="">Válassz ügyfelet...</option>';
+        
+        result.rows.forEach(user => {
+          const option = document.createElement('option');
+          option.value = user.ID_USER;
+          option.textContent = `${user.NEV} (${user.EMAIL})`;
+          select.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Ügyfelek betöltési hiba:', error);
+      }
+    }
+
+    // Email küldés
+    async function sendMessage() {
+      const userId = document.getElementById('user-select').value;
+      const subject = document.getElementById('email-subject').value;
       const message = document.getElementById('message').value;
-      alert(`Üzenet elküldve: ${user} - ${message}`);
-    }
 
-    // Parancs futtatása
-    function executeCommand() {
-      const command = document.getElementById('command').value;
-      alert(`Parancs futtatva: ${command}`);
-    }
+      if (!userId) {
+        alert('Kérjük, válasszon ügyfelet!');
+        return;
+      }
 
-    // Adatok exportálása
-    function exportData() {
-      alert('Adatok exportálva!');
-    }
+      if (!subject.trim()) {
+        alert('Kérjük, adja meg az email tárgyát!');
+        return;
+      }
 
-    // Felhasználók kezelése
-    function createUser() {
-      const name = document.getElementById('new-user-name').value;
-      const code = document.getElementById('new-user-code').value;
-      if (name && code) {
-        const userSelect = document.getElementById('delete-user-select');
-        const option = document.createElement('option');
-        option.value = name;
-        option.textContent = name;
-        userSelect.appendChild(option);
-        alert(`Felhasználó létrehozva: ${name} (${code})`);
-      } else {
-        alert('Kérjük, adja meg a nevet és a kódot!');
+      if (!message.trim()) {
+        alert('Kérjük, írjon üzenetet!');
+        return;
+      }
+
+      const userSelect = document.getElementById('user-select');
+      const selectedUser = userSelect.options[userSelect.selectedIndex].text;
+      
+      if (!confirm(`Biztosan szeretne emailt küldeni?\n\nCímzett: ${selectedUser}\nTárgy: ${subject}\n\nÜzenet: ${message.substring(0, 100)}${message.length > 100 ? '...' : ''}`)) {
+        return;
+      }
+
+      try {
+        const response = await fetch('http://localhost:3000/api/admin/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: userId,
+            subject: subject,
+            message: message
+          })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          alert(`✅ ${result.message}`);
+          document.getElementById('message').value = '';
+          document.getElementById('email-subject').value = 'Üzenet a szerviz rendszerből';
+        } else {
+          alert(`❌ Hiba: ${result.error}`);
+        }
+
+      } catch (error) {
+        alert(`❌ Hiba a kapcsolat során: ${error.message}`);
       }
     }
-    function deleteUser() {
-      const userSelect = document.getElementById('delete-user-select');
-      const selectedUser = userSelect.value;
-      if (selectedUser) {
-        userSelect.remove(userSelect.selectedIndex);
-        alert(`Felhasználó törölve: ${selectedUser}`);
-      } else {
-        alert('Nincs kiválasztott felhasználó!');
+
+    // SQL parancs futtatása - MÓDOSÍTOTT: operátor szerkesztés gomb hozzáadása
+    async function executeCommand() {
+      const command = document.getElementById('command').value.trim();
+
+      if (!command) {
+        alert('Kérjük, írjon be egy SQL parancsot!');
+        return;
       }
+
+      try {
+        const result = await executeSqlQuery(command);
+        
+        if (result.type === "select") {
+          // Speciális kezelés operátor tábla esetén - szerkesztés gomb hozzáadása
+          if (command.toUpperCase().includes('OPERATOR') && result.rows.length > 0) {
+            displayResultsWithEdit(result.rows);
+          } else {
+            displayResults(result.rows);
+          }
+          alert(`✅ SELECT sikeres! ${result.rows.length} sor visszaadva.`);
+        } else {
+          alert("✅ Parancs sikeresen lefutott: " + (result.message || 'Módosítás végrehajtva'));
+        }
+        
+        await refreshAllData();
+        
+      } catch (error) {
+        alert("❌ Hiba: " + error);
+      }
+    }
+
+    // Eredmények megjelenítése táblázatban - operátor szerkesztés gombokkal - JAVÍTOTT
+    function displayResultsWithEdit(rows) {
+      const resultsDiv = document.getElementById('sql-results');
+      const resultsTable = document.getElementById('results-table');
+      
+      if (rows.length === 0) {
+        resultsTable.innerHTML = '<tr><td class="text-center py-3 text-muted">Nincs találat</td></tr>';
+        resultsDiv.style.display = 'block';
+        return;
+      }
+
+      const headers = Object.keys(rows[0]);
+      let headerHTML = '<thead><tr>';
+      headers.forEach(header => {
+        headerHTML += `<th>${header}</th>`;
+      });
+      headerHTML += '<th>Műveletek</th></tr></thead>';
+      
+      let bodyHTML = '<tbody>';
+      rows.forEach(row => {
+        bodyHTML += '<tr>';
+        headers.forEach(header => {
+          let value = row[header];
+          if (value === null || value === undefined) value = '';
+          if (typeof value === 'object') value = JSON.stringify(value);
+          
+          // Speciális formázás ADMIN mezőnek
+          if (header === 'ADMIN') {
+            const badgeClass = value === 'Y' ? 'badge-admin-yes' : 'badge-admin-no';
+            const badgeText = value === 'Y' ? 'Igen' : 'Nem';
+            bodyHTML += `<td><span class="badge-modern ${badgeClass}">${badgeText}</span></td>`;
+          } else {
+            bodyHTML += `<td>${value}</td>`;
+          }
+        });
+        
+        // Szerkesztés gomb hozzáadása - JAVÍTOTT: email érték kezelése
+        const emailValue = (row.EMAIL && row.EMAIL !== 'undefined' && row.EMAIL !== 'null') ? row.EMAIL : '';
+        bodyHTML += `<td>
+          <button class="edit-operator-btn" onclick="editOperator(${row.ID_OPERATOR}, '${escapeString(row.LOGIN)}', '${escapeString(row.NEV)}', '${escapeString(emailValue)}', '${row.ADMIN}')">
+            <i class="bi bi-gear-fill"></i>
+          </button>
+        </td>`;
+        
+        bodyHTML += '</tr>';
+      });
+      bodyHTML += '</tbody>';
+      
+      resultsTable.innerHTML = headerHTML + bodyHTML;
+      resultsDiv.style.display = 'block';
+    }
+
+    // Segédfüggvény string escape-hez
+    function escapeString(str) {
+      if (!str) return '';
+      return str.replace(/'/g, "\\'").replace(/"/g, '\\"');
+    }
+
+    // Eredmények megjelenítése táblázatban (normál)
+    function displayResults(rows) {
+      const resultsDiv = document.getElementById('sql-results');
+      const resultsTable = document.getElementById('results-table');
+      
+      if (rows.length === 0) {
+        resultsTable.innerHTML = '<tr><td class="text-center py-3 text-muted">Nincs találat</td></tr>';
+        resultsDiv.style.display = 'block';
+        return;
+      }
+
+      const headers = Object.keys(rows[0]);
+      let headerHTML = '<thead><tr>';
+      headers.forEach(header => {
+        headerHTML += `<th>${header}</th>`;
+      });
+      headerHTML += '</tr></thead>';
+      
+      let bodyHTML = '<tbody>';
+      rows.forEach(row => {
+        bodyHTML += '<tr>';
+        headers.forEach(header => {
+          let value = row[header];
+          if (value === null || value === undefined) value = '';
+          if (typeof value === 'object') value = JSON.stringify(value);
+          bodyHTML += `<td>${value}</td>`;
+        });
+        bodyHTML += '</tr>';
+      });
+      bodyHTML += '</tbody>';
+      
+      resultsTable.innerHTML = headerHTML + bodyHTML;
+      resultsDiv.style.display = 'block';
+    }
+
+    // Gyors lekérdezés futtatása
+    function runQuickQuery(sql) {
+      document.getElementById('command').value = sql;
+      executeCommand();
+    }
+
+    // Tábla exportálása
+    async function exportTable(tableName) {
+      const sql = `SELECT * FROM ${tableName}`;
+      
+      try {
+        const result = await executeSqlQuery(sql);
+        const csv = convertToCSV(result.rows);
+        downloadCSV(csv, `${tableName}_export_${new Date().toISOString().split('T')[0]}.csv`);
+        alert(`✅ ${tableName} tábla exportálva! ${result.rows.length} sor.`);
+      } catch (error) {
+        alert('❌ Export hiba: ' + error);
+      }
+    }
+
+    // CSV konverzió
+    function convertToCSV(objArray) {
+      const array = typeof objArray !== 'object' ? JSON.parse(objArray) : objArray;
+      if (array.length === 0) return '';
+      
+      let str = '';
+      
+      const headers = Object.keys(array[0]);
+      str += headers.join(',') + '\r\n';
+      
+      for (let i = 0; i < array.length; i++) {
+        let line = '';
+        for (let index in array[i]) {
+          if (line !== '') line += ',';
+          let value = array[i][index];
+          if (value === null || value === undefined) value = '';
+          if (typeof value === 'object') value = JSON.stringify(value);
+          line += `"${value.toString().replace(/"/g, '""')}"`;
+        }
+        str += line + '\r\n';
+      }
+      return str;
+    }
+
+    // CSV letöltés
+    function downloadCSV(csv, filename) {
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.setAttribute('hidden', '');
+      a.setAttribute('href', url);
+      a.setAttribute('download', filename);
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    // Általános SQL lekérdezés függvény
+    async function executeSqlQuery(sql) {
+      const response = await fetch('http://localhost:3000/api/admin/execute-sql', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sql: sql })
+      });
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error);
+      }
+      
+      return data;
     }
   </script>
 </body>

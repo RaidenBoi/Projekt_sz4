@@ -17,5 +17,9 @@ router.post('/orders', authController.addOrder);
 router.get('/orders', authController.getOrders);
 router.delete('/orders/:id', authController.deleteOrder);
 
+// 🔹 Profil irányítás
+router.get('/profile', authController.redirectProfile);
+
 module.exports = router;
+
 

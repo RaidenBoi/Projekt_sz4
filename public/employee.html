@@ -42,292 +42,275 @@ function clearCurrentUser() {
   main.innerHTML=''; 
 }
 
-function renderHeader(){
-  const user = getCurrentUser();
+function renderHeader() {
+  const userBox = document.getElementById('userBox');
   userBox.innerHTML = '';
-  if(!user){
-    const loginBtn = document.createElement('button');
-    loginBtn.innerText = 'Bejelentkezés (demo)';
-    loginBtn.className = 'bg-indigo-600 text-white py-2 px-4 rounded-xl hover:bg-indigo-700';
-    loginBtn.addEventListener('click', ()=> setCurrentUser({ role:'employee', id:2, name:'János Szervizes' }));
-    userBox.appendChild(loginBtn);
-  } else {
-    const badge = document.createElement('div');
-    badge.innerText = `${user.role==='admin'?'Admin':'Alkalmazott'} — ${user.name||user.id}`;
-    badge.className = 'text-sm px-3 py-2 rounded-full bg-indigo-50 text-indigo-700';
-    const logout = document.createElement('button');
-    logout.innerText = 'Kijelentkezés';
-    logout.className = 'text-sm text-gray-600 underline';
-    logout.addEventListener('click', ()=> clearCurrentUser());
-    userBox.appendChild(badge); 
-    userBox.appendChild(logout);
-  }
+
+  fetch('/api/me')
+    .then(res => res.json())
+    .then(user => {
+      if (user && user.ID_OPERATOR) {
+        // Alkalmazott be van lépve
+        const badge = document.createElement('div');
+        badge.innerText = `Szervizes — ${user.NEV}`;
+        badge.className = 'text-sm px-3 py-2 rounded-full bg-indigo-50 text-indigo-700';
+        const logout = document.createElement('button');
+        logout.innerText = 'Kijelentkezés';
+        logout.className = 'text-sm text-gray-600 underline';
+        logout.addEventListener('click', async () => {
+          await fetch('/api/logout', { method: 'POST' });
+          window.location.href = '/index.html';
+        });
+        userBox.appendChild(badge);
+        userBox.appendChild(logout);
+      } else {
+        // Nincs bejelentkezve → login oldal
+        const loginBtn = document.createElement('button');
+        loginBtn.innerText = 'Bejelentkezés';
+        loginBtn.className = 'bg-indigo-600 text-white py-2 px-4 rounded-xl hover:bg-indigo-700';
+        loginBtn.addEventListener('click', () => {
+          window.location.href = '/login.html';
+        });
+        userBox.appendChild(loginBtn);
+      }
+    })
+    .catch(err => {
+      console.error('Profil betöltési hiba:', err);
+    });
 }
 
-/* EMPLOYEE DASHBOARD */
-async function renderEmployeeDashboard(){
+/* EMPLOYEE DASHBOARD – táblázatos verzió */
+async function renderEmployeeDashboard() {
   main.innerHTML = `
+    <!-- 🔹 STATISZTIKA -->
     <section class="bg-white p-6 rounded-2xl shadow mb-6">
       <h2 class="text-lg font-semibold mb-4">Statisztika</h2>
       <div id="taskStats" class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
         <div class="p-4 bg-indigo-50 rounded-xl">
-          <div class="text-sm muted">Feldolgozás alatt</div>
-          <div class="text-2xl font-bold" id="statProcess">0</div>
+          <div class="text-sm text-gray-500">Folyamatban</div>
+          <div id="statProcess" class="text-2xl font-bold text-indigo-700"></div>
         </div>
         <div class="p-4 bg-green-50 rounded-xl">
-          <div class="text-sm muted">Kész</div>
-          <div class="text-2xl font-bold" id="statClosed">0</div>
+          <div class="text-sm text-gray-500">Kész</div>
+          <div id="statClosed" class="text-2xl font-bold text-green-700"></div>
         </div>
         <div class="p-4 bg-yellow-50 rounded-xl">
-          <div class="text-sm muted">Árajánlat küldve</div>
-          <div class="text-2xl font-bold" id="statSent">0</div>
+          <div class="text-sm text-gray-500">Árajánlat küldve</div>
+          <div id="statSent" class="text-2xl font-bold text-yellow-700"></div>
         </div>
         <div class="p-4 bg-gray-50 rounded-xl">
-          <div class="text-sm muted">Mai nap</div>
-          <div class="text-2xl font-bold" id="statToday">0</div>
+          <div class="text-sm text-gray-500">Mai nap</div>
+          <div id="statToday" class="text-2xl font-bold text-gray-700"></div>
         </div>
       </div>
     </section>
 
+    <!-- 🔹 SZERVÍZFOLYAMATOK TÁBLÁZAT -->
     <section class="bg-white p-6 rounded-2xl shadow">
-      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-2">
-        <h2 class="text-lg font-semibold">Feladatok</h2>
-        <div class="flex gap-2 flex-wrap w-full sm:w-auto">
-          <input id="taskSearch" placeholder="Keresés név, email, státusz..." class="border p-2 rounded-lg flex-1 sm:flex-none" />
-          <button id="taskRefresh" class="bg-indigo-600 text-white px-3 py-2 rounded-xl">Frissít</button>
+      <div class="flex flex-wrap gap-3 mb-4 items-center justify-between">
+        <h2 class="text-lg font-semibold">Szervízfolyamatok</h2>
+        <div class="flex gap-2 flex-wrap">
+          <input id="taskSearch" placeholder="Gyorskeresés..." class="border p-2 rounded-lg" />
+          <select id="statusFilter" class="border p-2 rounded-lg">
+            <option value="">Összes státusz</option>
+            <option value="indítva">Indítva</option>
+            <option value="process">Folyamatban</option>
+            <option value="closed">Lezárva</option>
+          </select>
+          <button id="taskRefresh" class="bg-indigo-600 text-white px-4 py-2 rounded-xl">Frissít</button>
         </div>
       </div>
-      <div id="taskList" class="space-y-4"></div>
+
+      <div class="overflow-x-auto">
+        <table class="min-w-full border text-sm" id="taskTable">
+          <thead class="bg-indigo-50">
+            <tr>
+              <th class="p-2 cursor-pointer sort" data-field="DATUMIDO">📅 Felvételi dátum</th>
+              <th class="p-2">Név</th>
+              <th class="p-2">Email</th>
+              <th class="p-2">Tétel</th>
+              <th class="p-2">Státusz</th>
+              <th class="p-2 text-right">Összeg</th>
+            </tr>
+          </thead>
+          <tbody id="taskTableBody">
+            <tr><td colspan="6" class="p-4 text-center text-gray-500">Betöltés...</td></tr>
+          </tbody>
+        </table>
+      </div>
     </section>
+
+    <div id="detailModal"></div>
   `;
 
   document.getElementById('taskRefresh').addEventListener('click', loadTasks);
-  document.getElementById('taskSearch').addEventListener('input', e=>{
-    const q = e.target.value.toLowerCase();
-    const filtered = window.__pc_tasks?.filter(t => 
-      (t.NEV||'').toLowerCase().includes(q) || 
-      (t.EMAIL||'').toLowerCase().includes(q) || 
-      ((t.KONDI||'').toLowerCase().includes(q))
-    );
-    renderTaskList(filtered || []);
-  });
+  document.getElementById('taskSearch').addEventListener('input', filterTasks);
+  document.getElementById('statusFilter').addEventListener('change', filterTasks);
+  document.querySelector('.sort').addEventListener('click', sortByDate);
 
   await loadTasks();
 }
 
-/* Load tasks from backend */
-async function loadTasks(){
-  const listEl = document.getElementById('taskList');
-  if(!listEl) return;
-  listEl.innerHTML = '<p class="muted">Betöltés...</p>';
+/* --- Segéd: statisztika animáció --- */
+function animateCount(el, target) {
+  const duration = 600;
+  const start = parseInt(el.textContent) || 0;
+  const startTime = performance.now();
+  function update(time) {
+    const progress = Math.min((time - startTime) / duration, 1);
+    el.textContent = Math.floor(start + (target - start) * progress);
+    if (progress < 1) requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+
+/* --- Statisztika frissítés --- */
+function updateStats(tasks) {
+  const today = new Date().toISOString().slice(0, 10);
+  const stats = {
+    statProcess: tasks.filter(t => t.KONDI === 'process').length,
+    statClosed: tasks.filter(t => t.KONDI === 'closed').length,
+    statSent: tasks.filter(t => t.KONDI === 'sent').length,
+    statToday: tasks.filter(t => (t.DATUMIDO || '').slice(0, 10) === today).length
+  };
+  for (const [id, val] of Object.entries(stats)) {
+    const el = document.getElementById(id);
+    if (el) animateCount(el, val);
+  }
+}
+
+let allTasks = [];
+let sortAsc = true;
+
+/* --- Betöltés backendről --- */
+async function loadTasks() {
+  const body = document.getElementById('taskTableBody');
+  body.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-500">Betöltés...</td></tr>`;
   try {
     const res = await fetch('/api/users/tasks');
-    const tasks = await res.json();
-    window.__pc_tasks = tasks || [];
-    renderTaskList(tasks);
-  } catch(err){
-    listEl.innerHTML = '<p class="text-red-600">Hiba a feladatok betöltésekor.</p>';
-    console.error(err);
+    const data = await res.json();
+    allTasks = data || [];
+    renderTasks(allTasks);
+    updateStats(allTasks);
+  } catch (err) {
+    body.innerHTML = `<tr><td colspan="6" class="p-4 text-red-600">Hiba a betöltéskor.</td></tr>`;
   }
 }
 
-/* Render task list */
-function renderTaskList(tasks){
-  const container = document.getElementById('taskList');
-  container.innerHTML='';
-  if(!tasks.length){ container.innerHTML='<p class="muted">Nincs megjeleníthető feladat.</p>'; return; }
-
+/* --- Táblázat renderelése --- */
+function renderTasks(tasks) {
+  const body = document.getElementById('taskTableBody');
+  if (!tasks.length) {
+    body.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-500">Nincs találat.</td></tr>`;
+    return;
+  }
   const today = new Date().toISOString().slice(0,10);
-
-  tasks.forEach(task=>{
-    const div=document.createElement('div');
-    div.className='bg-gray-50 rounded-xl p-4 border border-gray-200 flex flex-col sm:flex-row justify-between gap-4';
-
-    let tetelHTML = '';
-    if(task.ID_KOSARTETEL){
-      tetelHTML = `
-        <div class="mt-2 p-2 bg-gray-100 rounded-lg">
-          <div class="text-sm font-semibold">${task.tetelNev}</div>
-          <div class="text-sm muted">Státusz: ${task.KONDI}</div>
-          <div class="text-sm">Munkaóra: ${task.MUNKAORA}, Díj: ${task.MUNkADIJ}, Anyag: ${task.ANYAGDIJ}</div>
-          <div class="text-sm font-bold">Bruttó: ${task.VEGOSSZEG}</div>
-        </div>
-      `;
+  body.innerHTML = tasks.map(t => {
+    const kiad = t.KIAD_DATUM || t.KIAD_DAT || '';
+    let warn = '';
+    if (kiad) {
+      const d = kiad.slice(0,10);
+      if (d === today) warn = '<span class="text-red-600 font-bold">⚠</span>';
+      else if (d < today) warn = '<span class="text-orange-600 font-bold">⛔</span>';
     }
-
-    div.innerHTML=`
-      <div class="flex-1">
-        <div class="font-semibold text-indigo-700">${task.NEV}</div>
-        <div class="text-sm muted">${task.EMAIL||''}</div>
-        <div class="mt-2 text-sm">${task.LEIRAS||'—'}</div>
-        ${tetelHTML}
-      </div>
-      <div class="flex flex-col gap-2 w-full sm:w-64">
-        <div class="text-sm muted">${task.KONDI||'feldolgozás alatt'}</div>
-        <button class="openBtn w-full ${task.KONDI==='closed'?'bg-gray-400 cursor-not-allowed':'bg-indigo-600 text-white'} py-2 rounded-xl"
-                ${task.KONDI==='closed'?'disabled':''}>Részletek</button>
-        <div class="mt-6" id="taskWarning-${task.ID_KOSAR}"></div>
-      </div>
+    return `
+      <tr class="border-b hover:bg-indigo-50 cursor-pointer" onclick="openDetail(${t.ID_KOSAR})">
+        <td class="p-2">${(t.DATUMIDO||'').slice(0,10)} ${warn}</td>
+        <td class="p-2 font-semibold">${t.NEV||''}</td>
+        <td class="p-2">${t.EMAIL||''}</td>
+        <td class="p-2">${t.tetelNev||'-'}</td>
+        <td class="p-2">${t.KONDI||'indítva'}</td>
+        <td class="p-2 text-right">${t.VEGOSSZEG ? t.VEGOSSZEG.toLocaleString()+' Ft' : '-'}</td>
+      </tr>
     `;
-
-    // Warning logika a külön div-be
-    const warningEl = div.querySelector(`#taskWarning-${task.ID_KOSAR}`);
-    if (task.KIAD_DATUM) {
-      const kiad = task.KIAD_DATUM.slice(0,10);
-      if (kiad === today) {
-        warningEl.innerHTML = '<div class="text-red-600 font-bold text-lg">⚠ Sürgős!</div>';
-      } else if (kiad < today) {
-        warningEl.innerHTML = '<div class="text-orange-600 font-bold text-lg">⛔ Lejárt határidő!</div>';
-      }
-    }
-
-    div.querySelector('.openBtn').addEventListener('click', ()=> {
-      if(task.KONDI==='closed') return;
-      openTaskDetail(task);
-    });
-
-    container.appendChild(div);
-  });
+  }).join('');
 }
 
-/* Open task detail */
-async function openTaskDetail(task){
-  const modal = document.createElement('div');
-  modal.className = 'fixed inset-0 z-50 flex items-start justify-center p-4 sm:p-6 overflow-auto';
+/* --- Keresés + szűrés --- */
+function filterTasks() {
+  const q = document.getElementById('taskSearch').value.toLowerCase();
+  const s = document.getElementById('statusFilter').value.toLowerCase();
+  const filtered = allTasks.filter(t =>
+    (t.NEV||'').toLowerCase().includes(q) ||
+    (t.EMAIL||'').toLowerCase().includes(q) ||
+    (t.KONDI||'').toLowerCase().includes(q)
+  ).filter(t => !s || (t.KONDI||'').toLowerCase() === s);
+  renderTasks(filtered);
+}
+
+/* --- Rendezés dátum szerint --- */
+function sortByDate() {
+  sortAsc = !sortAsc;
+  const sorted = [...allTasks].sort((a,b)=>{
+    const d1 = new Date(a.DATUMIDO||0), d2 = new Date(b.DATUMIDO||0);
+    return sortAsc ? d1 - d2 : d2 - d1;
+  });
+  renderTasks(sorted);
+}
+
+/* --- Részletes / szerkeszthető nézet --- */
+async function openDetail(id) {
+  const t = allTasks.find(x => x.ID_KOSAR == id);
+  if (!t) return;
+  const modal = document.getElementById('detailModal');
   modal.innerHTML = `
-    <div class="absolute inset-0 bg-black/30"></div>
-    <div class="relative bg-white rounded-2xl shadow-lg max-w-3xl w-full p-6 z-10">
-      <div class="flex justify-between items-start mb-4">
-        <h3 class="text-xl font-semibold">${task.NEV}</h3>
-      </div>
-      <div id="detailActions" class="space-y-4"></div>
-      <div class="mt-4 flex justify-end gap-2 flex-wrap">
-        <button id="closeDetail" class="bg-gray-200 px-3 py-2 rounded-xl">Bezár</button>
+    <div class="fixed inset-0 bg-black/30 flex items-start justify-center p-4 overflow-auto z-50">
+      <div class="bg-white rounded-2xl shadow-lg p-6 max-w-3xl w-full">
+        <h3 class="text-xl font-semibold mb-4">Részletes adatok</h3>
+        <div class="grid md:grid-cols-2 gap-3 mb-4">
+          <input id="editNev" value="${t.NEV||''}" class="border p-2 rounded-lg" placeholder="Név" />
+          <input id="editEmail" value="${t.EMAIL||''}" class="border p-2 rounded-lg" placeholder="Email" />
+          <input id="editMunkaora" type="number" value="${t.MUNKAORA||''}" class="border p-2 rounded-lg" placeholder="Munkaóra" />
+          <input id="editMunkadij" type="number" value="${t.MUNkADIJ||''}" class="border p-2 rounded-lg" placeholder="Munkadíj (Ft)" />
+          <input id="editAnyagdij" type="number" value="${t.ANYAGDIJ||''}" class="border p-2 rounded-lg" placeholder="Anyagdíj (Ft)" />
+          <select id="editKondi" class="border p-2 rounded-lg">
+            <option value="indítva" ${t.KONDI==='indítva'?'selected':''}>Indítva</option>
+            <option value="process" ${t.KONDI==='process'?'selected':''}>Folyamatban</option>
+            <option value="closed" ${t.KONDI==='closed'?'selected':''}>Lezárva</option>
+          </select>
+        </div>
+        <textarea id="editLeiras" class="border p-2 rounded-lg w-full h-24" placeholder="Leírás">${t.LEIRAS||''}</textarea>
+        <div class="mt-4 flex justify-end gap-2">
+          <button id="saveBtn" class="bg-green-600 text-white px-4 py-2 rounded-xl">Mentés</button>
+          <button id="closeBtn" class="bg-gray-200 px-4 py-2 rounded-xl">Bezár</button>
+        </div>
+        <p id="editMsg" class="text-sm mt-2 text-gray-600"></p>
       </div>
     </div>
   `;
-  document.body.appendChild(modal);
-  modal.querySelector('#closeDetail').addEventListener('click', () => modal.remove());
-
-  const actions = modal.querySelector('#detailActions');
-  const today = new Date().toISOString().slice(0,10);
-  const isProcess = task.KONDI === 'process';
-  const isSent = task.KONDI === 'sent';
-  const isClosed = task.KONDI === 'closed';
-
-  // ⚠ / ⛔ figyelmeztetés modalban
-  if (task.KIAD_DATUM) {
-    const kiad = task.KIAD_DATUM.slice(0,10);
-    if (kiad === today) {
-      const urgentLabel = document.createElement('div');
-      urgentLabel.innerText = '⚠ Sürgős!';
-      urgentLabel.className = 'text-red-600 font-bold text-lg';
-      actions.appendChild(urgentLabel);
-    } else if (kiad < today) {
-      const expiredLabel = document.createElement('div');
-      expiredLabel.innerText = '⛔ Lejárt határidő!';
-      expiredLabel.className = 'text-orange-600 font-bold text-lg';
-      actions.appendChild(expiredLabel);
-    }
-  }
-
-  const offer = document.createElement('div');
-  offer.className = 'p-3 border rounded-lg bg-white flex flex-col gap-3';
-  offer.innerHTML = `
-    <div class="font-semibold">Árajánlat / Számlázás</div>
-    <div class="grid md:grid-cols-4 gap-3">
-      <select id="o_category" class="border p-2 rounded-lg" ${isProcess?'disabled':''}>
-        <option value="" disabled selected>Válassz kategóriát</option>
-      </select>
-      <input id="o_munkadij" type="number" min="1" step="1" placeholder="Munkadíj (Ft/óra)" class="border p-2 rounded-lg" ${isProcess?'readonly':''}/>
-      <input id="o_anyagdij" type="number" min="0" step="1" placeholder="Anyagdíj (Ft)" class="border p-2 rounded-lg" ${isProcess?'readonly':''}/>
-      <input id="o_munkaora" type="number" min="1" step="1" placeholder="Munkaóra (óra)" class="border p-2 rounded-lg" ${isProcess?'readonly':''}/>
-      <input id="o_felvDatum" type="date" class="border p-2 rounded-lg" ${isProcess?'readonly':''}/>
-      <input id="o_kiadDatum" type="date" class="border p-2 rounded-lg" ${isProcess?'readonly':''}/>
-    </div>
-    <div class="flex gap-2 mt-2 flex-wrap">
-      <button id="oSend" class="bg-indigo-600 text-white px-4 py-2 rounded-xl" ${isProcess||isClosed?'disabled':''}>Árajánlat küldése</button>
-      <button id="oComplete" class="bg-green-600 text-white px-4 py-2 rounded-xl" ${isClosed?'disabled':''}>Elkészült (Számlázás)</button>
-    </div>
-    <p id="oMsg" class="text-sm mt-2"></p>
-  `;
-  actions.appendChild(offer);
-
-  const selectCat = offer.querySelector('#o_category');
-  try {
-    const res = await fetch('/api/categories');
-    const categories = await res.json();
-    categories.forEach(cat => {
-      const opt = document.createElement('option');
-      opt.value = cat.ID_KATEGORIA;
-      opt.textContent = cat.KATEGORIA;
-      selectCat.appendChild(opt);
-    });
-
-    const catId = task.ID_KATEGORIA
-    if(catId && (isProcess || isSent || isClosed)){
-      selectCat.value = catId;
-    }
-  } catch(err){ 
-    console.error('Hiba a kategóriák betöltésekor', err); 
-  }
-
-  if(isProcess || isSent || isClosed){
-    if(task.MUNKAORA !== undefined) offer.querySelector('#o_munkaora').value = task.MUNKAORA;
-    if(task.MUNkADIJ !== undefined) offer.querySelector('#o_munkadij').value = task.MUNkADIJ;
-    if(task.ANYAGDIJ !== undefined) offer.querySelector('#o_anyagdij').value = task.ANYAGDIJ;
-
-    const felv = task.FELV_DATUM || task.FELV_DAT || '';
-    const kiad = task.KIAD_DATUM || task.KIAD_DAT || '';
-
-    if(felv) offer.querySelector('#o_felvDatum').value = felv.slice(0,10);
-    if(kiad) offer.querySelector('#o_kiadDatum').value = kiad.slice(0,10);
-  }
-
-  // Árajánlat küldése
-  offer.querySelector('#oSend')?.addEventListener('click', async () => {
-    const oMsg = offer.querySelector('#oMsg');
-    const category = offer.querySelector('#o_category').value;
-    const munkadij = Number(offer.querySelector('#o_munkadij').value);
-    const anyagdij = Number(offer.querySelector('#o_anyagdij').value);
-    const munkaora = Number(offer.querySelector('#o_munkaora').value);
-    const felvDatum = offer.querySelector('#o_felvDatum').value;
-    const kiadDatum = offer.querySelector('#o_kiadDatum').value;
-
-    if (!category) { oMsg.innerText = 'Kérlek, válassz kategóriát!'; return; }
-    if (!munkadij || munkadij <= 0) { oMsg.innerText = 'A munkadíjnak nagyobbnak kell lennie nullánál!'; return; }
-    if (!munkaora || munkaora <= 0) { oMsg.innerText = 'A munkaóra értékének nagyobbnak kell lennie nullánál!'; return; }
-    if (anyagdij < 0) { oMsg.innerText = 'Az anyagdíj nem lehet negatív!'; return; }
-    if (!felvDatum) { oMsg.innerText = 'Add meg a felvétel dátumát!'; return; }
-    if (!kiadDatum) { oMsg.innerText = 'Add meg a kiadási dátumot!'; return; }
-
-    const body = { taskId: task.ID_KOSAR, userId: task.ID_USER, categoryId: category, munkaora, munkadij, anyagdij, felvDatum, kiadDatum, operatorId: getCurrentUser().id };
-
+  modal.querySelector('#closeBtn').onclick = () => modal.innerHTML = '';
+  modal.querySelector('#saveBtn').onclick = async () => {
+    const updated = {
+      NEV: document.getElementById('editNev').value,
+      EMAIL: document.getElementById('editEmail').value,
+      MUNKAORA: +document.getElementById('editMunkaora').value,
+      MUNkADIJ: +document.getElementById('editMunkadij').value,
+      ANYAGDIJ: +document.getElementById('editAnyagdij').value,
+      LEIRAS: document.getElementById('editLeiras').value,
+      KONDI: document.getElementById('editKondi').value
+    };
+    const msg = modal.querySelector('#editMsg');
     try {
-      const res = await fetch('/api/users/tasks/sendoffer', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
-      if (!res.ok) { const text = await res.text(); console.error('Hiba a szerverről:', text); oMsg.innerText='Hiba az árajánlat küldésekor!'; return; }
+      const res = await fetch('/api/users/tasks/'+id, {
+        method:'PUT',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(updated)
+      });
       const data = await res.json();
-      oMsg.innerText = data.message;
-      await loadTasks();
-    } catch(err) { console.error(err); oMsg.innerText='Hiba az árajánlat küldésekor!'; }
-  });
-
-  // Feladat befejezése
-  offer.querySelector('#oComplete')?.addEventListener('click', async () => {
-    const oMsg = offer.querySelector('#oMsg');
-    try {
-      const res = await fetch('/api/users/tasks/complete', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ taskId: task.ID_KOSAR }) });
-      if (!res.ok) { const text = await res.text(); console.error('Hiba a feladat befejezésekor:', text); oMsg.innerText='Hiba a feladat befejezésekor!'; return; }
-      const data = await res.json();
-      oMsg.innerText = data.message;
-      modal.remove();
-      await loadTasks();
-    } catch(err) { console.error(err); oMsg.innerText='Hiba a feladat befejezésekor!'; }
-  });
+      msg.textContent = data.message;
+      if (res.ok) {
+        await loadTasks();
+        setTimeout(()=> modal.innerHTML='',800);
+      }
+    } catch (err) {
+      console.error(err);
+      msg.textContent = 'Hiba mentés közben.';
+    }
+  };
 }
 
 renderHeader();
-if(getCurrentUser()) renderEmployeeDashboard();
+if (getCurrentUser()) renderEmployeeDashboard();
 </script>
 
 </body>

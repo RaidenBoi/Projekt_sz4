@@ -78,57 +78,104 @@ exports.login = async (req, res) => {
   }
 
   try {
-    const [rows] = await db.query(`SELECT * FROM userek WHERE EMAIL = ? LIMIT 1`, [email]);
+    const [[userRows], [operatorRows]] = await Promise.all([
+      db.query(`SELECT * FROM userek WHERE EMAIL = ? LIMIT 1`, [email]),
+      db.query(`SELECT * FROM operator WHERE EMAIL = ? LIMIT 1`, [email])
+    ]);
 
-    if (rows.length === 0) {
+    const user = userRows[0];
+    const operator = operatorRows[0];
+
+    // Ha egyik sem található:
+    if (!user && !operator) {
       return res.status(400).json({ message: 'Nincs ilyen felhasználó!' });
     }
 
-    const user = rows[0];
-    const match = await bcrypt.compare(password, user.PASSWORD);
+    // Jelszóellenőrzés külön-külön
+    let match = false;
+    let loggedInUser = null;
+    let role = null;
+
+    if (user && await bcrypt.compare(password, user.PASSWORD)) {
+      match = true;
+      loggedInUser = user;
+      role = 'user';
+    } else if (operator && operator.PASSWORD === password) {
+      match = true;
+      loggedInUser = operator;
+      role = operator.ADMIN === 'Y' ? 'admin' : 'operator';
+    }
+    
+    
 
     if (!match) {
       return res.status(400).json({ message: 'Hibás jelszó!' });
     }
 
-    req.session.userId = user.ID_USER;
-    req.session.email = user.EMAIL;
+    // Azonosító beállítása
+    const userId = loggedInUser.ID_USER || loggedInUser.ID_OPERATOR || loggedInUser.id || loggedInUser.ID;
 
-    res.json({ message: 'Sikeres bejelentkezés!', userId: user.ID_USER });
+    // Session beállítása
+    req.session.userId = userId;
+    req.session.email = loggedInUser.EMAIL;
+    req.session.role = role;
+
+    res.json({
+      message: 'Sikeres bejelentkezés!',
+      userId,
+      role
+    });
+
   } catch (err) {
-    console.error(err);
+    console.error('Bejelentkezési hiba:', err);
     res.status(500).json({ message: 'Hiba a bejelentkezés során.' });
   }
 };
 
-// 4️⃣ Profil lekérése
+// 4️⃣ Profil lekérése (userek + operator kezeléssel)
 exports.getProfile = async (req, res) => {
   if (!req.session.userId) {
     return res.status(401).json({ message: "Nincs bejelentkezve!" });
   }
 
   try {
-    const [rows] = await db.query(
-      `SELECT u.ID_USER, u.NEV, u.LOGIN, u.EMAIL, u.TELEFON, u.CIM,
-              u.ID_TELEPULES, t.TELEPULES, t.IRSZAM, m.MEGYE,
-              u.CEGNEV, u.ADOSZAM, u.CIM_SZML, u.FUNKCIO, u.RATIFICAT
-       FROM userek u
-       LEFT JOIN telepulesek t ON u.ID_TELEPULES = t.ID_TELEPULES
-       LEFT JOIN megye m ON t.ID_MEGYEK = m.ID_MEGYEK
-       WHERE u.ID_USER = ? LIMIT 1`,
-      [req.session.userId]
-    );
+    let rows;
 
-    if (rows.length === 0) {
+    if (req.session.role === 'operator' || req.session.role === 'admin') {
+      // 🔹 Operátor vagy admin esetén az operator táblából kérdezünk
+      [rows] = await db.query(
+        `SELECT ID_OPERATOR AS ID_OPERATOR, LOGIN, NEV, ADMIN, EMAIL
+         FROM operator 
+         WHERE ID_OPERATOR = ? 
+         LIMIT 1`,
+        [req.session.userId]
+      );
+    } else {
+      // 🔹 Normál user esetén a userek táblából
+      [rows] = await db.query(
+        `SELECT u.ID_USER AS id, u.NEV, u.LOGIN, u.EMAIL, u.TELEFON, u.CIM,
+                u.ID_TELEPULES, t.TELEPULES, t.IRSZAM, m.MEGYE,
+                u.CEGNEV, u.ADOSZAM, u.CIM_SZML, u.FUNKCIO, u.RATIFICAT
+         FROM userek u
+         LEFT JOIN telepulesek t ON u.ID_TELEPULES = t.ID_TELEPULES
+         LEFT JOIN megye m ON t.ID_MEGYEK = m.ID_MEGYEK
+         WHERE u.ID_USER = ? 
+         LIMIT 1`,
+        [req.session.userId]
+      );
+    }
+
+    if (!rows || rows.length === 0) {
       return res.status(404).json({ message: "Felhasználó nem található!" });
     }
 
     res.json(rows[0]);
   } catch (err) {
-    console.error(err);
+    console.error('Profil lekérési hiba:', err);
     res.status(500).json({ message: "Hiba történt a profil lekérésekor." });
   }
 };
+
 
 // 5️⃣ Profil frissítése
 exports.updateProfile = async (req, res) => {
@@ -260,7 +307,29 @@ exports.deleteOrder = async (req, res) => {
     console.error("❌ Hiba a rendelés törlésekor:", err);
     res.status(500).json({ message: "Hiba történt a rendelés törlésekor." });
   }
-};
+  };
 
+  // 🔟 Profil irányító – közös hivatkozási pont minden szerepkörnek
+  exports.redirectProfile = async (req, res) => {
+    try {
+      if (!req.session.userId || !req.session.role) {
+        // Nincs bejelentkezve → login oldal
+        return res.redirect('/login.html');
+      }
 
+      switch (req.session.role) {
+        case 'user':
+          return res.redirect('/profil.html');
+        case 'operator':
+          return res.redirect('/employee.html');
+        case 'admin':
+          return res.redirect('/admin.html');
+        default:
+          return res.redirect('/login.html');
+      }
+    } catch (err) {
+      console.error('Hiba a profil irányításnál:', err);
+      res.status(500).send('Hiba történt az irányítás során.');
+    }
+  };
 
